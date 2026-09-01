@@ -1,5 +1,5 @@
 /* ============================================================
-   DATABASE STORE & LOCALSTORAGE PERSISTENCE
+   DATA STORE & LOCAL STORAGE
    ============================================================ */
 const INITIAL_DATA = {
   teachers: [
@@ -24,7 +24,7 @@ const INITIAL_DATA = {
       "Monday-P1": { subject: "Mathematics", teacher: "Dr. Sarah Jenkins" },
       "Monday-P2": { subject: "Physics", teacher: "Mrs. Marie Curie" },
       "Monday-P3": { subject: "Chemistry", teacher: "Mr. Dmitri Mendeleev" },
-      "Tuesday-P1": { subject: "Computer Science", teacher: "Prof. Alan Turing" }
+      "Monday-P4": { subject: "English", teacher: "Mr. Robert Frost" }
     }
   }
 };
@@ -34,88 +34,40 @@ function saveStore() {
   localStorage.setItem("eduAdminDB", JSON.stringify(store));
 }
 
-// 5 Working Days & 8 Periods
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const PERIODS = ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"];
 
 /* ============================================================
-   PANEL TOGGLE (☰ BUTTON)
+   GLOBAL TOGGLE & NAVIGATION
    ============================================================ */
-const sidebar = document.getElementById("sidebar");
-const menuToggleBtn = document.getElementById("menu-toggle-btn");
-const closeSidebarBtn = document.getElementById("close-sidebar-btn");
-const sidebarBackdrop = document.getElementById("sidebar-backdrop");
-
-function openSidebar() {
-  sidebar.classList.add("open");
-  sidebarBackdrop.classList.add("active");
-}
-
-function closeSidebar() {
-  sidebar.classList.remove("open");
-  sidebarBackdrop.classList.remove("active");
-}
-
-menuToggleBtn.addEventListener("click", openSidebar);
-closeSidebarBtn.addEventListener("click", closeSidebar);
-sidebarBackdrop.addEventListener("click", closeSidebar);
-
-/* ============================================================
-   AUTHENTICATION LOGIC
-   ============================================================ */
-const authScreen = document.getElementById("auth-screen");
-const appScreen = document.getElementById("app-screen");
-const loginForm = document.getElementById("login-form");
-const logoutBtn = document.getElementById("logout-btn");
-
-if (sessionStorage.getItem("eduAdminAuth") === "true") {
-  showApp();
-}
-
-loginForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const user = document.getElementById("username").value.trim();
-  const pass = document.getElementById("password").value.trim();
-
-  if (user === "admin" && pass === "admin123") {
-    sessionStorage.setItem("eduAdminAuth", "true");
-    showApp();
-  } else {
-    alert("Invalid credentials! Use admin / admin123");
+window.toggleSidebar = function(open) {
+  const sidebar = document.getElementById("sidebar");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  if (sidebar && backdrop) {
+    if (open) {
+      sidebar.classList.add("open");
+      backdrop.classList.add("active");
+    } else {
+      sidebar.classList.remove("open");
+      backdrop.classList.remove("active");
+    }
   }
-});
+};
 
-logoutBtn.addEventListener("click", () => {
-  sessionStorage.removeItem("eduAdminAuth");
-  appScreen.classList.remove("active");
-  authScreen.classList.add("active");
-});
+window.switchView = function(viewName) {
+  const navBtns = document.querySelectorAll(".nav-btn");
+  const views = document.querySelectorAll(".content-view");
+  const pageTitle = document.getElementById("page-title");
 
-function showApp() {
-  authScreen.classList.remove("active");
-  appScreen.classList.add("active");
-  initApp();
-}
-
-/* ============================================================
-   NAVIGATION
-   ============================================================ */
-const navButtons = document.querySelectorAll(".nav-btn");
-const views = document.querySelectorAll(".content-view");
-const pageTitle = document.getElementById("page-title");
-
-navButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    const target = btn.getAttribute("data-target");
-    switchView(target);
-    closeSidebar();
+  views.forEach(v => {
+    v.classList.toggle("active", v.id === `view-${viewName}`);
   });
-});
 
-function switchView(viewName) {
-  navButtons.forEach(b => b.classList.toggle("active", b.getAttribute("data-target") === viewName));
-  views.forEach(v => v.classList.toggle("active", v.id === `view-${viewName}`));
-  
+  navBtns.forEach(btn => {
+    const text = btn.innerText.toLowerCase();
+    btn.classList.toggle("active", text.includes(viewName.substring(0, 4)));
+  });
+
   const titleMap = {
     dashboard: "Dashboard Overview",
     teachers: "Teacher Management",
@@ -124,7 +76,9 @@ function switchView(viewName) {
     classes: "Classes & Subjects",
     timetable: "Class Timetable Manager"
   };
-  pageTitle.innerText = titleMap[viewName] || "Dashboard";
+  if (pageTitle) pageTitle.innerText = titleMap[viewName] || "Dashboard";
+
+  window.toggleSidebar(false);
 
   if (viewName === "dashboard") renderDashboard();
   if (viewName === "teachers") renderTeachers();
@@ -132,25 +86,24 @@ function switchView(viewName) {
   if (viewName === "history") renderHistory();
   if (viewName === "classes") renderClassesAndSubjects();
   if (viewName === "timetable") renderTimetable();
-}
+};
 
 /* ============================================================
-   INIT & DASHBOARD
+   AUTH HANDLING
    ============================================================ */
-function initApp() {
-  document.getElementById("live-date").innerText = new Date().toDateString();
-  const dateInput = document.getElementById("attendance-date");
-  if (!dateInput.value) {
-    dateInput.value = new Date().toISOString().split("T")[0];
-  }
-  renderDashboard();
-  populateDropdowns();
-}
+window.handleLogout = function() {
+  sessionStorage.removeItem("eduAdminAuth");
+  document.getElementById("app-screen").classList.remove("active");
+  document.getElementById("auth-screen").classList.add("active");
+};
 
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
 function renderDashboard() {
   const totalT = store.teachers.length;
   const totalC = store.classes.length;
-  const today = document.getElementById("attendance-date").value || new Date().toISOString().split("T")[0];
+  const today = document.getElementById("attendance-date")?.value || new Date().toISOString().split("T")[0];
   const recordToday = store.attendanceHistory.find(r => r.date === today);
 
   let present = 0;
@@ -163,41 +116,44 @@ function renderDashboard() {
     });
   }
 
-  document.getElementById("stat-total-teachers").innerText = totalT;
-  document.getElementById("stat-present-today").innerText = recordToday ? present : "—";
-  document.getElementById("stat-absent-today").innerText = recordToday ? absentOrLeave : "—";
-  document.getElementById("stat-total-classes").innerText = totalC;
+  const statTeachers = document.getElementById("stat-total-teachers");
+  const statPresent = document.getElementById("stat-present-today");
+  const statAbsent = document.getElementById("stat-absent-today");
+  const statClasses = document.getElementById("stat-total-classes");
+
+  if (statTeachers) statTeachers.innerText = totalT;
+  if (statPresent) statPresent.innerText = recordToday ? present : "—";
+  if (statAbsent) statAbsent.innerText = recordToday ? absentOrLeave : "—";
+  if (statClasses) statClasses.innerText = totalC;
 
   const dashSummary = document.getElementById("dash-attendance-summary");
-  if (!recordToday) {
-    dashSummary.innerHTML = `<p style="color:var(--text-muted); padding: 0.5rem 0;">No attendance marked for today (${today}).</p>`;
-  } else {
-    let rows = store.teachers.map(t => {
-      const status = recordToday.records[t.id] || "Unmarked";
-      const badgeClass = status === "Present" ? "badge-present" : (status === "Absent" ? "badge-absent" : "badge-leave");
-      return `<tr><td><strong>${t.name}</strong></td><td><span class="badge ${badgeClass}">${status}</span></td></tr>`;
-    }).join("");
-    dashSummary.innerHTML = `<table class="data-table"><thead><tr><th>Teacher</th><th>Today's Status</th></tr></thead><tbody>${rows}</tbody></table>`;
+  if (dashSummary) {
+    if (!recordToday) {
+      dashSummary.innerHTML = `<p style="color:var(--text-muted); padding: 0.5rem 0;">No attendance marked for today (${today}).</p>`;
+    } else {
+      let rows = store.teachers.map(t => {
+        const status = recordToday.records[t.id] || "Unmarked";
+        const badgeClass = status === "Present" ? "badge-present" : (status === "Absent" ? "badge-absent" : "badge-leave");
+        return `<tr><td><strong>${t.name}</strong></td><td><span class="badge ${badgeClass}">${status}</span></td></tr>`;
+      }).join("");
+      dashSummary.innerHTML = `<table class="data-table"><thead><tr><th>Teacher</th><th>Today's Status</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
   }
 }
 
 /* ============================================================
-   TEACHERS & CLEAR ALL TEACHERS
+   TEACHERS
    ============================================================ */
-const teachersTableBody = document.getElementById("teachers-table-body");
-const teacherModal = document.getElementById("teacher-modal");
-const openTeacherModalBtn = document.getElementById("open-teacher-modal");
-const closeTeacherModalBtn = document.getElementById("close-teacher-modal");
-const cancelTeacherModalBtn = document.getElementById("cancel-teacher-modal");
-const teacherForm = document.getElementById("teacher-form");
-const clearAllTeachersBtn = document.getElementById("clear-all-teachers-btn");
-
 function renderTeachers() {
+  const tbody = document.getElementById("teachers-table-body");
+  if (!tbody) return;
+
   if (store.teachers.length === 0) {
-    teachersTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No teachers available. Click "+ Add New Teacher" to add.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No teachers available. Click "+ Add New Teacher" to add.</td></tr>`;
     return;
   }
-  teachersTableBody.innerHTML = store.teachers.map(t => `
+
+  tbody.innerHTML = store.teachers.map(t => `
     <tr>
       <td><code>${t.id}</code></td>
       <td><strong>${t.name}</strong></td>
@@ -212,58 +168,36 @@ function renderTeachers() {
   `).join("");
 }
 
-function populateTeacherSubjectSelect() {
-  const select = document.getElementById("teacher-subject");
-  select.innerHTML = store.subjects.map(s => `<option value="${s}">${s}</option>`).join("");
-}
-
-openTeacherModalBtn.onclick = () => {
-  teacherForm.reset();
+window.openTeacherModal = function() {
+  const form = document.getElementById("teacher-form");
+  if (form) form.reset();
   document.getElementById("teacher-id").value = "";
   document.getElementById("teacher-modal-title").innerText = "Add Teacher";
-  populateTeacherSubjectSelect();
-  teacherModal.classList.add("active");
-};
-
-closeTeacherModalBtn.onclick = cancelTeacherModalBtn.onclick = () => {
-  teacherModal.classList.remove("active");
-};
-
-teacherForm.onsubmit = (e) => {
-  e.preventDefault();
-  const id = document.getElementById("teacher-id").value || "T" + Math.floor(100 + Math.random() * 900);
-  const name = document.getElementById("teacher-name").value.trim();
-  const subject = document.getElementById("teacher-subject").value;
-  const email = document.getElementById("teacher-email").value.trim();
-  const phone = document.getElementById("teacher-phone").value.trim();
-
-  const existingIndex = store.teachers.findIndex(t => t.id === id);
-  if (existingIndex > -1) {
-    store.teachers[existingIndex] = { id, name, subject, email, phone };
-  } else {
-    store.teachers.push({ id, name, subject, email, phone });
+  
+  const select = document.getElementById("teacher-subject");
+  if (select) {
+    select.innerHTML = store.subjects.map(s => `<option value="${s}">${s}</option>`).join("");
   }
-
-  saveStore();
-  teacherModal.classList.remove("active");
-  renderTeachers();
-  renderDashboard();
+  document.getElementById("teacher-modal").classList.add("active");
 };
 
-window.editTeacher = (id) => {
+window.closeTeacherModal = function() {
+  document.getElementById("teacher-modal").classList.remove("active");
+};
+
+window.editTeacher = function(id) {
   const t = store.teachers.find(x => x.id === id);
   if (!t) return;
-  populateTeacherSubjectSelect();
+  window.openTeacherModal();
   document.getElementById("teacher-id").value = t.id;
   document.getElementById("teacher-name").value = t.name;
   document.getElementById("teacher-subject").value = t.subject;
   document.getElementById("teacher-email").value = t.email;
   document.getElementById("teacher-phone").value = t.phone;
   document.getElementById("teacher-modal-title").innerText = "Edit Teacher";
-  teacherModal.classList.add("active");
 };
 
-window.deleteTeacher = (id) => {
+window.deleteTeacher = function(id) {
   if (confirm("Are you sure you want to delete this teacher?")) {
     store.teachers = store.teachers.filter(t => t.id !== id);
     saveStore();
@@ -272,8 +206,8 @@ window.deleteTeacher = (id) => {
   }
 };
 
-clearAllTeachersBtn.onclick = () => {
-  if (confirm("⚠️ WARNING: Do you want to clear ALL teachers from the database?")) {
+window.clearAllTeachers = function() {
+  if (confirm("⚠️ WARNING: Do you want to clear ALL teachers?")) {
     store.teachers = [];
     saveStore();
     renderTeachers();
@@ -282,25 +216,23 @@ clearAllTeachersBtn.onclick = () => {
 };
 
 /* ============================================================
-   DAILY ATTENDANCE & HISTORY
+   ATTENDANCE
    ============================================================ */
-const attendanceDateInput = document.getElementById("attendance-date");
-const attendanceTableBody = document.getElementById("attendance-table-body");
-const saveAttendanceBtn = document.getElementById("save-attendance-btn");
-
-attendanceDateInput.onchange = () => renderAttendance();
-
 function renderAttendance() {
-  const selectedDate = attendanceDateInput.value;
+  const dateInput = document.getElementById("attendance-date");
+  const tbody = document.getElementById("attendance-table-body");
+  if (!dateInput || !tbody) return;
+
+  const selectedDate = dateInput.value;
   const existingLog = store.attendanceHistory.find(h => h.date === selectedDate);
   const records = existingLog ? existingLog.records : {};
 
   if (store.teachers.length === 0) {
-    attendanceTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No teachers found. Please add teachers first.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No teachers found. Please add teachers first.</td></tr>`;
     return;
   }
 
-  attendanceTableBody.innerHTML = store.teachers.map(t => {
+  tbody.innerHTML = store.teachers.map(t => {
     const status = records[t.id] || "Present";
     return `
       <tr>
@@ -322,13 +254,13 @@ function renderAttendance() {
   }).join("");
 }
 
-window.setQuickAttendance = (tid, val) => {
+window.setQuickAttendance = function(tid, val) {
   const select = document.querySelector(`.attendance-select[data-tid="${tid}"]`);
   if (select) select.value = val;
 };
 
-saveAttendanceBtn.onclick = () => {
-  const date = attendanceDateInput.value;
+window.saveAttendance = function() {
+  const date = document.getElementById("attendance-date").value;
   const selects = document.querySelectorAll(".attendance-select");
   const records = {};
 
@@ -348,18 +280,18 @@ saveAttendanceBtn.onclick = () => {
   renderDashboard();
 };
 
-const historyTableBody = document.getElementById("history-table-body");
-const clearHistoryBtn = document.getElementById("clear-history-btn");
-
 function renderHistory() {
+  const tbody = document.getElementById("history-table-body");
+  if (!tbody) return;
+
   if (store.attendanceHistory.length === 0) {
-    historyTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No history recorded yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No history recorded yet.</td></tr>`;
     return;
   }
 
   const sorted = [...store.attendanceHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  historyTableBody.innerHTML = sorted.map(row => {
+  tbody.innerHTML = sorted.map(row => {
     let presentCount = 0, absentCount = 0, leaveCount = 0;
     const values = Object.values(row.records);
 
@@ -384,7 +316,7 @@ function renderHistory() {
   }).join("");
 }
 
-clearHistoryBtn.onclick = () => {
+window.clearHistory = function() {
   if (confirm("Clear all attendance history logs?")) {
     store.attendanceHistory = [];
     saveStore();
@@ -396,47 +328,24 @@ clearHistoryBtn.onclick = () => {
 /* ============================================================
    CLASSES & SUBJECTS
    ============================================================ */
-const addClassForm = document.getElementById("add-class-form");
-const addSubjectForm = document.getElementById("add-subject-form");
-const classList = document.getElementById("class-list");
-const subjectList = document.getElementById("subject-list");
-
 function renderClassesAndSubjects() {
-  classList.innerHTML = store.classes.map(c => `
-    <li>${c} <span class="del" onclick="removeClass('${c}')">&times;</span></li>
-  `).join("");
+  const classList = document.getElementById("class-list");
+  const subjectList = document.getElementById("subject-list");
 
-  subjectList.innerHTML = store.subjects.map(s => `
-    <li>${s} <span class="del" onclick="removeSubject('${s}')">&times;</span></li>
-  `).join("");
+  if (classList) {
+    classList.innerHTML = store.classes.map(c => `
+      <li>${c} <span class="del" onclick="removeClass('${c}')">&times;</span></li>
+    `).join("");
+  }
+
+  if (subjectList) {
+    subjectList.innerHTML = store.subjects.map(s => `
+      <li>${s} <span class="del" onclick="removeSubject('${s}')">&times;</span></li>
+    `).join("");
+  }
 }
 
-addClassForm.onsubmit = (e) => {
-  e.preventDefault();
-  const val = document.getElementById("class-name").value.trim();
-  if (val && !store.classes.includes(val)) {
-    store.classes.push(val);
-    saveStore();
-    document.getElementById("class-name").value = "";
-    renderClassesAndSubjects();
-    populateDropdowns();
-    renderDashboard();
-  }
-};
-
-addSubjectForm.onsubmit = (e) => {
-  e.preventDefault();
-  const val = document.getElementById("subject-name").value.trim();
-  if (val && !store.subjects.includes(val)) {
-    store.subjects.push(val);
-    saveStore();
-    document.getElementById("subject-name").value = "";
-    renderClassesAndSubjects();
-    populateDropdowns();
-  }
-};
-
-window.removeClass = (className) => {
+window.removeClass = function(className) {
   store.classes = store.classes.filter(c => c !== className);
   saveStore();
   renderClassesAndSubjects();
@@ -444,7 +353,7 @@ window.removeClass = (className) => {
   renderDashboard();
 };
 
-window.removeSubject = (subjectName) => {
+window.removeSubject = function(subjectName) {
   store.subjects = store.subjects.filter(s => s !== subjectName);
   saveStore();
   renderClassesAndSubjects();
@@ -452,35 +361,35 @@ window.removeSubject = (subjectName) => {
 };
 
 /* ============================================================
-   TIMETABLE (8 PERIODS) + AUTO GENERATOR
+   TIMETABLE & AUTO GENERATION (8 PERIODS)
    ============================================================ */
-const timetableClassSelect = document.getElementById("timetable-class-select");
-const timetableBody = document.getElementById("timetable-body");
-const slotModal = document.getElementById("slot-modal");
-const slotForm = document.getElementById("slot-form");
-const closeSlotModalBtn = document.getElementById("close-slot-modal");
-const clearSlotBtn = document.getElementById("clear-slot-btn");
-const autoBuildBtn = document.getElementById("btn-auto-build");
-const clearTimetableBtn = document.getElementById("btn-clear-timetable");
-
 function populateDropdowns() {
-  timetableClassSelect.innerHTML = store.classes.map(c => `<option value="${c}">${c}</option>`).join("");
+  const select = document.getElementById("timetable-class-select");
+  if (!select) return;
+  const curr = select.value;
+  select.innerHTML = store.classes.map(c => `<option value="${c}">${c}</option>`).join("");
+  if (curr && store.classes.includes(curr)) {
+    select.value = curr;
+  }
 }
 
-timetableClassSelect.onchange = () => renderTimetable();
-
 function renderTimetable() {
-  const selectedClass = timetableClassSelect.value;
-  document.getElementById("timetable-title-display").innerText = `Weekly Timetable — ${selectedClass || "No Class"}`;
+  const select = document.getElementById("timetable-class-select");
+  const tbody = document.getElementById("timetable-body");
+  const titleDisplay = document.getElementById("timetable-title-display");
+  if (!select || !tbody) return;
+
+  const selectedClass = select.value;
+  if (titleDisplay) titleDisplay.innerText = `Weekly Timetable — ${selectedClass || "No Class Selected"}`;
 
   if (!selectedClass) {
-    timetableBody.innerHTML = `<tr><td colspan="9">Please add and select a class.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9">Please add and select a class.</td></tr>`;
     return;
   }
 
   const classData = store.timetables[selectedClass] || {};
 
-  timetableBody.innerHTML = DAYS.map(day => {
+  tbody.innerHTML = DAYS.map(day => {
     const periodCols = PERIODS.map(period => {
       const slotKey = `${day}-${period}`;
       const assignment = classData[slotKey];
@@ -503,8 +412,8 @@ function renderTimetable() {
   }).join("");
 }
 
-window.openSlotModal = (day, period) => {
-  const selectedClass = timetableClassSelect.value;
+window.openSlotModal = function(day, period) {
+  const selectedClass = document.getElementById("timetable-class-select").value;
   document.getElementById("slot-modal-title").innerText = `Assign (${day} - ${period})`;
   document.getElementById("slot-day").value = day;
   document.getElementById("slot-period").value = period;
@@ -514,7 +423,7 @@ window.openSlotModal = (day, period) => {
 
   const teachSelect = document.getElementById("slot-teacher");
   if (store.teachers.length === 0) {
-    teachSelect.innerHTML = `<option value="Staff Member">Staff Member (No teachers added)</option>`;
+    teachSelect.innerHTML = `<option value="Staff Member">Staff Member</option>`;
   } else {
     teachSelect.innerHTML = store.teachers.map(t => `<option value="${t.name}">${t.name} (${t.subject})</option>`).join("");
   }
@@ -525,29 +434,15 @@ window.openSlotModal = (day, period) => {
     teachSelect.value = existing.teacher;
   }
 
-  slotModal.classList.add("active");
+  document.getElementById("slot-modal").classList.add("active");
 };
 
-closeSlotModalBtn.onclick = () => slotModal.classList.remove("active");
-
-slotForm.onsubmit = (e) => {
-  e.preventDefault();
-  const selectedClass = timetableClassSelect.value;
-  const day = document.getElementById("slot-day").value;
-  const period = document.getElementById("slot-period").value;
-  const subject = document.getElementById("slot-subject").value;
-  const teacher = document.getElementById("slot-teacher").value;
-
-  if (!store.timetables[selectedClass]) store.timetables[selectedClass] = {};
-  store.timetables[selectedClass][`${day}-${period}`] = { subject, teacher };
-
-  saveStore();
-  slotModal.classList.remove("active");
-  renderTimetable();
+window.closeSlotModal = function() {
+  document.getElementById("slot-modal").classList.remove("active");
 };
 
-clearSlotBtn.onclick = () => {
-  const selectedClass = timetableClassSelect.value;
+window.clearCurrentSlot = function() {
+  const selectedClass = document.getElementById("timetable-class-select").value;
   const day = document.getElementById("slot-day").value;
   const period = document.getElementById("slot-period").value;
 
@@ -555,17 +450,16 @@ clearSlotBtn.onclick = () => {
     delete store.timetables[selectedClass][`${day}-${period}`];
     saveStore();
   }
-  slotModal.classList.remove("active");
+  window.closeSlotModal();
   renderTimetable();
 };
 
-/* --- AUTO BUILD TIMETABLE GENERATOR --- */
-autoBuildBtn.onclick = () => {
-  const selectedClass = timetableClassSelect.value;
-  if (!selectedClass) return alert("Select a class first!");
-  if (store.subjects.length === 0) return alert("Please add at least 1 subject in Classes & Subjects.");
+window.autoBuildTimetable = function() {
+  const selectedClass = document.getElementById("timetable-class-select").value;
+  if (!selectedClass) return alert("Please select a class first!");
+  if (store.subjects.length === 0) return alert("Please add subjects in 'Classes & Subjects' first.");
 
-  if (!confirm(`Generate automatic 8-period timetable for ${selectedClass}? This will replace current assignments.`)) return;
+  if (!confirm(`Generate automatic 8-period timetable for ${selectedClass}?`)) return;
 
   const newMatrix = {};
   const subjectsList = store.subjects;
@@ -576,8 +470,6 @@ autoBuildBtn.onclick = () => {
   DAYS.forEach(day => {
     PERIODS.forEach(period => {
       const subject = subjectsList[subjIndex % subjectsList.length];
-      
-      // Find teacher who specializes in this subject, or fallback
       const matchTeacher = teachersList.find(t => t.subject === subject);
       const teacherName = matchTeacher ? matchTeacher.name : (teachersList.length > 0 ? teachersList[subjIndex % teachersList.length].name : "Assigned Staff");
 
@@ -593,11 +485,11 @@ autoBuildBtn.onclick = () => {
   store.timetables[selectedClass] = newMatrix;
   saveStore();
   renderTimetable();
-  alert(`Timetable for ${selectedClass} automatically generated successfully!`);
+  alert(`Timetable for ${selectedClass} generated!`);
 };
 
-clearTimetableBtn.onclick = () => {
-  const selectedClass = timetableClassSelect.value;
+window.clearCurrentTimetable = function() {
+  const selectedClass = document.getElementById("timetable-class-select").value;
   if (!selectedClass) return;
   if (confirm(`Clear all slots for ${selectedClass}?`)) {
     store.timetables[selectedClass] = {};
@@ -606,16 +498,9 @@ clearTimetableBtn.onclick = () => {
   }
 };
 
-/* ============================================================
-   EXPORT AS IMAGE & PRINT
-   ============================================================ */
-document.getElementById("btn-print-timetable").addEventListener("click", () => {
-  window.print();
-});
-
-document.getElementById("btn-download-timetable").addEventListener("click", () => {
+window.downloadTimetableImage = function() {
   const node = document.getElementById("timetable-capture-node");
-  const selectedClass = timetableClassSelect.value || "Class";
+  const selectedClass = document.getElementById("timetable-class-select").value || "Class";
 
   html2canvas(node, {
     scale: 2,
@@ -628,4 +513,128 @@ document.getElementById("btn-download-timetable").addEventListener("click", () =
     link.href = canvas.toDataURL("image/png");
     link.click();
   });
+};
+
+/* ============================================================
+   APP INITIALIZATION ON PAGE LOAD
+   ============================================================ */
+function initAll() {
+  // Date setup
+  const liveDate = document.getElementById("live-date");
+  if (liveDate) liveDate.innerText = new Date().toDateString();
+
+  const dateInput = document.getElementById("attendance-date");
+  if (dateInput && !dateInput.value) {
+    dateInput.value = new Date().toISOString().split("T")[0];
+  }
+
+  // Populate data
+  populateDropdowns();
+  renderDashboard();
+  renderTeachers();
+  renderAttendance();
+  renderHistory();
+  renderClassesAndSubjects();
+  renderTimetable();
+
+  // Bind Form Submissions
+  const loginForm = document.getElementById("login-form");
+  if (loginForm) {
+    loginForm.onsubmit = function(e) {
+      e.preventDefault();
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      if (user === "admin" && pass === "admin123") {
+        sessionStorage.setItem("eduAdminAuth", "true");
+        document.getElementById("auth-screen").classList.remove("active");
+        document.getElementById("app-screen").classList.add("active");
+        initAll();
+      } else {
+        alert("Invalid login! Use admin / admin123");
+      }
+    };
+  }
+
+  const teacherForm = document.getElementById("teacher-form");
+  if (teacherForm) {
+    teacherForm.onsubmit = function(e) {
+      e.preventDefault();
+      const id = document.getElementById("teacher-id").value || "T" + Math.floor(100 + Math.random() * 900);
+      const name = document.getElementById("teacher-name").value.trim();
+      const subject = document.getElementById("teacher-subject").value;
+      const email = document.getElementById("teacher-email").value.trim();
+      const phone = document.getElementById("teacher-phone").value.trim();
+
+      const existingIndex = store.teachers.findIndex(t => t.id === id);
+      if (existingIndex > -1) {
+        store.teachers[existingIndex] = { id, name, subject, email, phone };
+      } else {
+        store.teachers.push({ id, name, subject, email, phone });
+      }
+
+      saveStore();
+      window.closeTeacherModal();
+      renderTeachers();
+      renderDashboard();
+    };
+  }
+
+  const addClassForm = document.getElementById("add-class-form");
+  if (addClassForm) {
+    addClassForm.onsubmit = function(e) {
+      e.preventDefault();
+      const val = document.getElementById("class-name").value.trim();
+      if (val && !store.classes.includes(val)) {
+        store.classes.push(val);
+        saveStore();
+        document.getElementById("class-name").value = "";
+        renderClassesAndSubjects();
+        populateDropdowns();
+        renderDashboard();
+      }
+    };
+  }
+
+  const addSubjectForm = document.getElementById("add-subject-form");
+  if (addSubjectForm) {
+    addSubjectForm.onsubmit = function(e) {
+      e.preventDefault();
+      const val = document.getElementById("subject-name").value.trim();
+      if (val && !store.subjects.includes(val)) {
+        store.subjects.push(val);
+        saveStore();
+        document.getElementById("subject-name").value = "";
+        renderClassesAndSubjects();
+        populateDropdowns();
+      }
+    };
+  }
+
+  const slotForm = document.getElementById("slot-form");
+  if (slotForm) {
+    slotForm.onsubmit = function(e) {
+      e.preventDefault();
+      const selectedClass = document.getElementById("timetable-class-select").value;
+      const day = document.getElementById("slot-day").value;
+      const period = document.getElementById("slot-period").value;
+      const subject = document.getElementById("slot-subject").value;
+      const teacher = document.getElementById("slot-teacher").value;
+
+      if (!store.timetables[selectedClass]) store.timetables[selectedClass] = {};
+      store.timetables[selectedClass][`${day}-${period}`] = { subject, teacher };
+
+      saveStore();
+      window.closeSlotModal();
+      renderTimetable();
+    };
+  }
+}
+
+// Auto Session Check
+window.addEventListener("DOMContentLoaded", () => {
+  if (sessionStorage.getItem("eduAdminAuth") === "true") {
+    document.getElementById("auth-screen").classList.remove("active");
+    document.getElementById("app-screen").classList.add("active");
+  }
+  initAll();
 });
