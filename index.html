@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EduAdmin - School & Timetable Management</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- html2canvas for client-side PNG export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -32,23 +33,23 @@
   </div>
 
   <div id="app-screen" class="screen">
-    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+    <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
 
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" aria-hidden="true">
       <div class="sidebar-header">
         <div class="brand-title">
           <span class="icon">🏫</span>
           <h3>EduAdmin</h3>
         </div>
-        <button class="close-panel-btn" onclick="toggleSidebar(false)">✕</button>
+        <button id="closeSidebarBtn" class="close-panel-btn" aria-label="Close menu">✕</button>
       </div>
-      <nav class="sidebar-nav">
-        <button class="nav-btn active" onclick="switchView('dashboard')">📊 Dashboard</button>
-        <button class="nav-btn" onclick="switchView('teachers')">👨‍🏫 Teachers</button>
-        <button class="nav-btn" onclick="switchView('attendance')">📋 Daily Attendance</button>
-        <button class="nav-btn" onclick="switchView('history')">📜 Attendance History</button>
-        <button class="nav-btn" onclick="switchView('classes')">🏫 Classes & Subjects</button>
-        <button class="nav-btn" onclick="switchView('timetable')">🗓️ Timetable Builder</button>
+      <nav class="sidebar-nav" role="navigation">
+        <button class="nav-btn active" data-view="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-view="teachers">👨‍🏫 Teachers</button>
+        <button class="nav-btn" data-view="attendance">📋 Daily Attendance</button>
+        <button class="nav-btn" data-view="history">📜 Attendance History</button>
+        <button class="nav-btn" data-view="classes">🏫 Classes & Subjects</button>
+        <button class="nav-btn" data-view="timetable">🗓️ Timetable Builder</button>
       </nav>
       <div class="sidebar-footer">
         <div class="user-badge">
@@ -58,14 +59,14 @@
             <small>admin@school.edu</small>
           </div>
         </div>
-        <button onclick="handleLogout()" class="btn btn-outline btn-sm">Sign Out</button>
+        <button id="signOutBtn" class="btn btn-outline btn-sm">Sign Out</button>
       </div>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
         <div class="topbar-left">
-          <button class="btn-menu" onclick="toggleSidebar(true)">☰ Menu</button>
+          <button id="hamburger" class="btn-menu" aria-label="Open menu">☰ Menu</button>
           <h1 id="page-title">Dashboard Overview</h1>
         </div>
         <div class="date-badge" id="live-date"></div>
@@ -111,9 +112,9 @@
           <div class="card">
             <h3>Quick Actions</h3>
             <div class="quick-actions">
-              <button class="btn btn-primary" onclick="switchView('attendance')">Mark Attendance</button>
-              <button class="btn btn-secondary" onclick="switchView('timetable')">View Timetable</button>
-              <button class="btn btn-outline" onclick="switchView('teachers')">Manage Staff</button>
+              <button class="btn btn-primary" data-nav="attendance">Mark Attendance</button>
+              <button class="btn btn-secondary" data-nav="timetable">View Timetable</button>
+              <button class="btn btn-outline" data-nav="teachers">Manage Staff</button>
             </div>
           </div>
         </div>
@@ -123,8 +124,8 @@
         <div class="section-actions flex-wrap">
           <h2>Teacher Directory</h2>
           <div class="button-group">
-            <button class="btn btn-danger btn-sm" onclick="clearAllTeachers()">🗑️ Clear All Teachers</button>
-            <button class="btn btn-primary" onclick="openTeacherModal()">+ Add New Teacher</button>
+            <button id="clearAllTeachersBtn" class="btn btn-danger btn-sm">🗑️ Clear All Teachers</button>
+            <button id="openAddTeacherBtn" class="btn btn-primary">+ Add New Teacher</button>
           </div>
         </div>
         <div class="card">
@@ -154,7 +155,7 @@
           </div>
           <div class="date-selector-wrap">
             <label for="attendance-date"><strong>Date:</strong></label>
-            <input type="date" id="attendance-date" class="input-control" onchange="renderAttendance()" />
+            <input type="date" id="attendance-date" class="input-control" />
           </div>
         </div>
         <div class="card">
@@ -172,7 +173,7 @@
             </table>
           </div>
           <div class="card-footer">
-            <button onclick="saveAttendance()" class="btn btn-success">Save Attendance Record</button>
+            <button id="saveAttendanceBtn" class="btn btn-success">Save Attendance Record</button>
           </div>
         </div>
       </section>
@@ -180,7 +181,7 @@
       <section id="view-history" class="content-view">
         <div class="section-actions flex-wrap">
           <h2>Attendance Log History</h2>
-          <button onclick="clearHistory()" class="btn btn-danger btn-sm">Clear History</button>
+          <button id="clearHistoryBtn" class="btn btn-danger btn-sm">Clear History</button>
         </div>
         <div class="card">
           <div class="table-container">
@@ -238,14 +239,14 @@
         <div class="section-actions no-print flex-wrap">
           <div class="filter-group">
             <label for="timetable-class-select"><strong>Select Class:</strong></label>
-            <select id="timetable-class-select" class="input-control" onchange="renderTimetable()"></select>
+            <select id="timetable-class-select" class="input-control"></select>
           </div>
           <div class="button-group flex-wrap">
-            <button class="btn btn-magic" onclick="autoBuildAllClassesTimetable()" title="Generate conflict-free schedule for all classes">⚡ Master Schedule (All Classes)</button>
-            <button class="btn btn-secondary btn-sm" onclick="autoBuildSingleClassTimetable()">⚡ Auto Fill This Class</button>
-            <button class="btn btn-danger btn-sm" onclick="clearCurrentTimetable()">Clear Timetable</button>
-            <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
-            <button class="btn btn-primary" onclick="downloadTimetableImage()">📥 Download PNG</button>
+            <button id="autoAllBtn" class="btn btn-magic" title="Generate conflict-free schedule for all classes">⚡ Master Schedule (All Classes)</button>
+            <button id="autoClassBtn" class="btn btn-secondary btn-sm">⚡ Auto Fill This Class</button>
+            <button id="clearTimetableBtn" class="btn btn-danger btn-sm">Clear Timetable</button>
+            <button class="btn btn-secondary" id="printBtn">🖨️ Print</button>
+            <button class="btn btn-primary" id="downloadPngBtn">📥 Download PNG</button>
           </div>
         </div>
 
@@ -278,11 +279,12 @@
     </main>
   </div>
 
-  <div id="teacher-modal" class="modal-overlay">
+  <!-- TEACHER MODAL -->
+  <div id="teacher-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="teacher-modal-title">Add Teacher</h3>
-        <button class="modal-close" onclick="closeTeacherModal()">&times;</button>
+        <button class="modal-close" id="closeTeacherModalBtn" aria-label="Close">&times;</button>
       </div>
       <form id="teacher-form">
         <input type="hidden" id="teacher-id" />
@@ -303,18 +305,19 @@
           <input type="tel" id="teacher-phone" required />
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline" onclick="closeTeacherModal()">Cancel</button>
+          <button type="button" class="btn btn-outline" id="cancelTeacherBtn">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Teacher</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div id="slot-modal" class="modal-overlay">
+  <!-- SLOT MODAL -->
+  <div id="slot-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="slot-modal-title">Assign Period Slot</h3>
-        <button class="modal-close" onclick="closeSlotModal()">&times;</button>
+        <button class="modal-close" id="closeSlotModalBtn" aria-label="Close">&times;</button>
       </div>
       <form id="slot-form">
         <input type="hidden" id="slot-day" />
@@ -328,7 +331,7 @@
           <select id="slot-teacher" required></select>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-danger" onclick="clearCurrentSlot()">Clear Slot</button>
+          <button type="button" class="btn btn-danger" id="clearSlotBtn">Clear Slot</button>
           <button type="submit" class="btn btn-primary">Save Slot</button>
         </div>
       </form>
