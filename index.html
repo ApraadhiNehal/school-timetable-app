@@ -9,7 +9,6 @@
 </head>
 <body>
 
-  <!-- LOGIN SCREEN -->
   <div id="auth-screen" class="screen active">
     <div class="login-card">
       <div class="brand">
@@ -32,12 +31,9 @@
     </div>
   </div>
 
-  <!-- MAIN APP SCREEN -->
   <div id="app-screen" class="screen">
-    <!-- BACKDROP -->
     <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
 
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="brand-title">
@@ -66,7 +62,6 @@
       </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="main-content">
       <header class="topbar">
         <div class="topbar-left">
@@ -76,7 +71,6 @@
         <div class="date-badge" id="live-date"></div>
       </header>
 
-      <!-- 1. DASHBOARD -->
       <section id="view-dashboard" class="content-view active">
         <div class="stats-grid">
           <div class="stat-card">
@@ -125,7 +119,6 @@
         </div>
       </section>
 
-      <!-- 2. TEACHERS -->
       <section id="view-teachers" class="content-view">
         <div class="section-actions flex-wrap">
           <h2>Teacher Directory</h2>
@@ -153,7 +146,6 @@
         </div>
       </section>
 
-      <!-- 3. ATTENDANCE -->
       <section id="view-attendance" class="content-view">
         <div class="section-actions flex-wrap">
           <div>
@@ -185,7 +177,6 @@
         </div>
       </section>
 
-      <!-- 4. ATTENDANCE HISTORY -->
       <section id="view-history" class="content-view">
         <div class="section-actions flex-wrap">
           <h2>Attendance Log History</h2>
@@ -209,7 +200,6 @@
         </div>
       </section>
 
-      <!-- 5. CLASSES & SUBJECTS -->
       <section id="view-classes" class="content-view">
         <div class="grid-2col">
           <div class="card">
@@ -217,7 +207,7 @@
             <form id="add-class-form">
               <div class="form-group">
                 <label for="class-name">Class Name / Grade</label>
-                <input type="text" id="class-name" placeholder="e.g., Grade 11-Science" required />
+                <input type="text" id="class-name" placeholder="e.g., Grade 10-A" required />
               </div>
               <button type="submit" class="btn btn-primary">Add Class</button>
             </form>
@@ -244,7 +234,6 @@
         </div>
       </section>
 
-      <!-- 6. TIMETABLE -->
       <section id="view-timetable" class="content-view">
         <div class="section-actions no-print flex-wrap">
           <div class="filter-group">
@@ -252,7 +241,8 @@
             <select id="timetable-class-select" class="input-control" onchange="renderTimetable()"></select>
           </div>
           <div class="button-group flex-wrap">
-            <button class="btn btn-magic" onclick="autoBuildTimetable()">⚡ Auto Build Timetable</button>
+            <button class="btn btn-magic" onclick="autoBuildAllClassesTimetable()" title="Generate conflict-free schedule for all classes">⚡ Master Schedule (All Classes)</button>
+            <button class="btn btn-secondary btn-sm" onclick="autoBuildSingleClassTimetable()">⚡ Auto Fill This Class</button>
             <button class="btn btn-danger btn-sm" onclick="clearCurrentTimetable()">Clear Timetable</button>
             <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
             <button class="btn btn-primary" onclick="downloadTimetableImage()">📥 Download PNG</button>
@@ -288,7 +278,6 @@
     </main>
   </div>
 
-  <!-- MODAL: TEACHER -->
   <div id="teacher-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -321,7 +310,6 @@
     </div>
   </div>
 
-  <!-- MODAL: SLOT -->
   <div id="slot-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
