@@ -9,6 +9,7 @@
 </head>
 <body>
 
+  <!-- LOGIN SCREEN -->
   <div id="auth-screen" class="screen active">
     <div class="login-card">
       <div class="brand">
@@ -31,11 +32,19 @@
     </div>
   </div>
 
+  <!-- MAIN APP WRAPPER -->
   <div id="app-screen" class="screen">
-    <aside class="sidebar">
+    <!-- BACKDROP FOR MOBILE SIDEBAR -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <span class="icon">🏫</span>
-        <h3>EduAdmin</h3>
+        <div class="brand-title">
+          <span class="icon">🏫</span>
+          <h3>EduAdmin</h3>
+        </div>
+        <button class="close-panel-btn" id="close-sidebar-btn" title="Close Panel">✕</button>
       </div>
       <nav class="sidebar-nav">
         <button class="nav-btn active" data-target="dashboard">📊 Dashboard</button>
@@ -57,12 +66,17 @@
       </div>
     </aside>
 
+    <!-- MAIN CONTENT AREA -->
     <main class="main-content">
       <header class="topbar">
-        <h1 id="page-title">Dashboard Overview</h1>
+        <div class="topbar-left">
+          <button id="menu-toggle-btn" class="btn-menu" aria-label="Toggle Side Panel">☰ Menu</button>
+          <h1 id="page-title">Dashboard Overview</h1>
+        </div>
         <div class="date-badge" id="live-date"></div>
       </header>
 
+      <!-- 1. DASHBOARD VIEW -->
       <section id="view-dashboard" class="content-view active">
         <div class="stats-grid">
           <div class="stat-card">
@@ -97,12 +111,11 @@
 
         <div class="card-grid">
           <div class="card">
-            <h3>Quick Today's Attendance Overview</h3>
-            <div id="dash-attendance-summary" class="table-container">
-              </div>
+            <h3>Today's Attendance Overview</h3>
+            <div id="dash-attendance-summary" class="table-container"></div>
           </div>
           <div class="card">
-            <h3>Quick Links & Actions</h3>
+            <h3>Quick Actions</h3>
             <div class="quick-actions">
               <button class="btn btn-primary" onclick="switchView('attendance')">Mark Attendance</button>
               <button class="btn btn-secondary" onclick="switchView('timetable')">View Timetable</button>
@@ -112,10 +125,14 @@
         </div>
       </section>
 
+      <!-- 2. TEACHERS VIEW -->
       <section id="view-teachers" class="content-view">
-        <div class="section-actions">
+        <div class="section-actions flex-wrap">
           <h2>Teacher Directory</h2>
-          <button class="btn btn-primary" id="open-teacher-modal">+ Add New Teacher</button>
+          <div class="button-group">
+            <button class="btn btn-danger btn-sm" id="clear-all-teachers-btn">🗑️ Clear All Teachers</button>
+            <button class="btn btn-primary" id="open-teacher-modal">+ Add New Teacher</button>
+          </div>
         </div>
         <div class="card">
           <div class="table-container">
@@ -124,24 +141,24 @@
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
-                  <th>Subject Specialization</th>
+                  <th>Subject</th>
                   <th>Email</th>
                   <th>Phone</th>
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="teachers-table-body">
-                </tbody>
+              <tbody id="teachers-table-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
+      <!-- 3. ATTENDANCE VIEW -->
       <section id="view-attendance" class="content-view">
-        <div class="section-actions">
+        <div class="section-actions flex-wrap">
           <div>
             <h2>Daily Teacher Attendance</h2>
-            <p>Select date and mark status (Present / Absent / Leave)</p>
+            <p>Select date and mark status</p>
           </div>
           <div class="date-selector-wrap">
             <label for="attendance-date"><strong>Date:</strong></label>
@@ -153,14 +170,13 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Teacher Name</th>
-                  <th>Primary Subject</th>
+                  <th>Teacher</th>
+                  <th>Subject</th>
                   <th>Status</th>
-                  <th>Quick Action</th>
+                  <th>Action</th>
                 </tr>
               </thead>
-              <tbody id="attendance-table-body">
-                </tbody>
+              <tbody id="attendance-table-body"></tbody>
             </table>
           </div>
           <div class="card-footer">
@@ -169,10 +185,11 @@
         </div>
       </section>
 
+      <!-- 4. ATTENDANCE HISTORY VIEW -->
       <section id="view-history" class="content-view">
-        <div class="section-actions">
+        <div class="section-actions flex-wrap">
           <h2>Attendance Log History</h2>
-          <button id="clear-history-btn" class="btn btn-danger btn-sm">Clear Old History</button>
+          <button id="clear-history-btn" class="btn btn-danger btn-sm">Clear History</button>
         </div>
         <div class="card">
           <div class="table-container">
@@ -180,19 +197,19 @@
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Present Teachers</th>
-                  <th>Absent Teachers</th>
-                  <th>On Leave</th>
-                  <th>Total Present %</th>
+                  <th>Present</th>
+                  <th>Absent</th>
+                  <th>Leave</th>
+                  <th>% Present</th>
                 </tr>
               </thead>
-              <tbody id="history-table-body">
-                </tbody>
+              <tbody id="history-table-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
+      <!-- 5. CLASSES & SUBJECTS VIEW -->
       <section id="view-classes" class="content-view">
         <div class="grid-2col">
           <div class="card">
@@ -200,7 +217,7 @@
             <form id="add-class-form">
               <div class="form-group">
                 <label for="class-name">Class Name / Grade</label>
-                <input type="text" id="class-name" placeholder="e.g., Grade 10-A" required />
+                <input type="text" id="class-name" placeholder="e.g., Grade 11-Science" required />
               </div>
               <button type="submit" class="btn btn-primary">Add Class</button>
             </form>
@@ -227,15 +244,18 @@
         </div>
       </section>
 
+      <!-- 6. TIMETABLE VIEW (8 PERIODS) -->
       <section id="view-timetable" class="content-view">
-        <div class="section-actions no-print">
+        <div class="section-actions no-print flex-wrap">
           <div class="filter-group">
             <label for="timetable-class-select"><strong>Select Class:</strong></label>
             <select id="timetable-class-select" class="input-control"></select>
           </div>
-          <div class="button-group">
-            <button class="btn btn-secondary" id="btn-print-timetable">🖨️ Print Timetable</button>
-            <button class="btn btn-primary" id="btn-download-timetable">📥 Download as Image</button>
+          <div class="button-group flex-wrap">
+            <button class="btn btn-magic" id="btn-auto-build">⚡ Auto Build Timetable</button>
+            <button class="btn btn-danger btn-sm" id="btn-clear-timetable">Clear Timetable</button>
+            <button class="btn btn-secondary" id="btn-print-timetable">🖨️ Print</button>
+            <button class="btn btn-primary" id="btn-download-timetable">📥 Download PNG</button>
           </div>
         </div>
 
@@ -245,21 +265,23 @@
             <p id="timetable-meta-display">Academic Year 2026-2027 • EduAdmin Management System</p>
           </div>
 
+          <!-- Scrollable Grid Wrapper -->
           <div class="table-container">
             <table class="timetable-table" id="timetable-grid">
               <thead>
                 <tr>
-                  <th>Day</th>
-                  <th>Period 1<br><small>08:30 - 09:15</small></th>
-                  <th>Period 2<br><small>09:15 - 10:00</small></th>
-                  <th>Period 3<br><small>10:15 - 11:00</small></th>
-                  <th>Period 4<br><small>11:00 - 11:45</small></th>
-                  <th>Period 5<br><small>12:30 - 01:15</small></th>
-                  <th>Period 6<br><small>01:15 - 02:00</small></th>
+                  <th class="day-col">Day</th>
+                  <th>P1<br><small>08:30-09:15</small></th>
+                  <th>P2<br><small>09:15-10:00</small></th>
+                  <th>P3<br><small>10:15-11:00</small></th>
+                  <th>P4<br><small>11:00-11:45</small></th>
+                  <th>P5<br><small>12:15-01:00</small></th>
+                  <th>P6<br><small>01:00-01:45</small></th>
+                  <th>P7<br><small>01:45-02:30</small></th>
+                  <th>P8<br><small>02:30-03:15</small></th>
                 </tr>
               </thead>
-              <tbody id="timetable-body">
-                </tbody>
+              <tbody id="timetable-body"></tbody>
             </table>
           </div>
         </div>
@@ -267,6 +289,7 @@
     </main>
   </div>
 
+  <!-- MODAL: TEACHER FORM -->
   <div id="teacher-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
@@ -299,6 +322,7 @@
     </div>
   </div>
 
+  <!-- MODAL: SLOT ASSIGNMENT -->
   <div id="slot-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
