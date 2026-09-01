@@ -238,13 +238,13 @@
       <section id="view-timetable" class="content-view">
         <div class="section-actions no-print flex-wrap">
           <div class="filter-group">
-            <label for="timetable-class-select"><strong>Select Class:</strong></label>
-            <select id="timetable-class-select" class="input-control"></select>
+            <label for="timetable-day-select"><strong>Select Day:</strong></label>
+            <select id="timetable-day-select" class="input-control"></select>
           </div>
           <div class="button-group flex-wrap">
-            <button id="autoAllBtn" class="btn btn-magic" title="Generate conflict-free schedule for all classes">⚡ Master Schedule (All Classes)</button>
-            <button id="autoClassBtn" class="btn btn-secondary btn-sm">⚡ Auto Fill This Class</button>
-            <button id="clearTimetableBtn" class="btn btn-danger btn-sm">Clear Timetable</button>
+            <button id="autoAllBtn" class="btn btn-magic" title="Generate conflict-free schedule for all classes on selected day">⚡ Master Schedule (All Classes - Day)</button>
+            <button id="autoClassBtn" class="btn btn-secondary btn-sm">⚡ Auto Fill This Class (Day)</button>
+            <button id="clearTimetableBtn" class="btn btn-danger btn-sm">Clear Day Timetable</button>
             <button class="btn btn-secondary" id="printBtn">🖨️ Print</button>
             <button class="btn btn-primary" id="downloadPngBtn">📥 Download PNG</button>
           </div>
@@ -252,25 +252,13 @@
 
         <div class="card printable-area" id="timetable-capture-node">
           <div class="timetable-header">
-            <h2 id="timetable-title-display">Weekly Class Timetable</h2>
+            <h2 id="timetable-title-display">Daily Class Timetable</h2>
             <p id="timetable-meta-display">Academic Year 2026-2027 • EduAdmin Management System</p>
           </div>
 
           <div class="table-container">
             <table class="timetable-table" id="timetable-grid">
-              <thead>
-                <tr>
-                  <th class="day-col">Day</th>
-                  <th>P1<br><small>08:30-09:15</small></th>
-                  <th>P2<br><small>09:15-10:00</small></th>
-                  <th>P3<br><small>10:15-11:00</small></th>
-                  <th>P4<br><small>11:00-11:45</small></th>
-                  <th>P5<br><small>12:15-01:00</small></th>
-                  <th>P6<br><small>01:00-01:45</small></th>
-                  <th>P7<br><small>01:45-02:30</small></th>
-                  <th>P8<br><small>02:30-03:15</small></th>
-                </tr>
-              </thead>
+              <thead id="timetable-head"></thead>
               <tbody id="timetable-body"></tbody>
             </table>
           </div>
@@ -322,6 +310,7 @@
       <form id="slot-form">
         <input type="hidden" id="slot-day" />
         <input type="hidden" id="slot-period" />
+        <input type="hidden" id="slot-class" />
         <div class="form-group">
           <label for="slot-subject">Subject</label>
           <select id="slot-subject" required></select>
