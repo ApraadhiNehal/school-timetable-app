@@ -1,5 +1,5 @@
 /* ============================================================
-   DEMO STATE INITIALIZER & LOCAL STORAGE SYNC
+   DATABASE STORE & LOCALSTORAGE PERSISTENCE
    ============================================================ */
 const INITIAL_DATA = {
   teachers: [
@@ -7,43 +7,61 @@ const INITIAL_DATA = {
     { id: "T102", name: "Prof. Alan Turing", subject: "Computer Science", email: "a.turing@school.edu", phone: "+1 555-0102" },
     { id: "T103", name: "Mrs. Marie Curie", subject: "Physics", email: "m.curie@school.edu", phone: "+1 555-0103" },
     { id: "T104", name: "Mr. Robert Frost", subject: "English", email: "r.frost@school.edu", phone: "+1 555-0104" },
-    { id: "T105", name: "Dr. Gregor Mendel", subject: "Biology", email: "g.mendel@school.edu", phone: "+1 555-0105" }
+    { id: "T105", name: "Dr. Gregor Mendel", subject: "Biology", email: "g.mendel@school.edu", phone: "+1 555-0105" },
+    { id: "T106", name: "Mr. Dmitri Mendeleev", subject: "Chemistry", email: "d.mendeleev@school.edu", phone: "+1 555-0106" },
+    { id: "T107", name: "Coach Jesse Owens", subject: "Physical Ed", email: "j.owens@school.edu", phone: "+1 555-0107" }
   ],
   classes: ["Grade 9-A", "Grade 10-A", "Grade 11-Science", "Grade 12-Science"],
   subjects: ["Mathematics", "Computer Science", "Physics", "Chemistry", "Biology", "English", "History", "Physical Ed"],
   attendanceHistory: [
     {
       date: "2026-08-31",
-      records: {
-        "T101": "Present",
-        "T102": "Present",
-        "T103": "On Leave",
-        "T104": "Present",
-        "T105": "Absent"
-      }
+      records: { "T101": "Present", "T102": "Present", "T103": "On Leave", "T104": "Present", "T105": "Absent" }
     }
   ],
   timetables: {
-    "Grade 10-A": {
+    "Grade 11-Science": {
       "Monday-P1": { subject: "Mathematics", teacher: "Dr. Sarah Jenkins" },
       "Monday-P2": { subject: "Physics", teacher: "Mrs. Marie Curie" },
-      "Tuesday-P1": { subject: "Computer Science", teacher: "Prof. Alan Turing" },
-      "Wednesday-P3": { subject: "English", teacher: "Mr. Robert Frost" }
+      "Monday-P3": { subject: "Chemistry", teacher: "Mr. Dmitri Mendeleev" },
+      "Tuesday-P1": { subject: "Computer Science", teacher: "Prof. Alan Turing" }
     }
   }
 };
 
-// Retrieve stored state or set default
 let store = JSON.parse(localStorage.getItem("eduAdminDB")) || INITIAL_DATA;
 function saveStore() {
   localStorage.setItem("eduAdminDB", JSON.stringify(store));
 }
 
+// 5 Working Days & 8 Periods
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const PERIODS = ["P1", "P2", "P3", "P4", "P5", "P6"];
+const PERIODS = ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"];
 
 /* ============================================================
-   AUTHENTICATION LOGIC (Demo Session)
+   PANEL TOGGLE (☰ BUTTON)
+   ============================================================ */
+const sidebar = document.getElementById("sidebar");
+const menuToggleBtn = document.getElementById("menu-toggle-btn");
+const closeSidebarBtn = document.getElementById("close-sidebar-btn");
+const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+
+function openSidebar() {
+  sidebar.classList.add("open");
+  sidebarBackdrop.classList.add("active");
+}
+
+function closeSidebar() {
+  sidebar.classList.remove("open");
+  sidebarBackdrop.classList.remove("active");
+}
+
+menuToggleBtn.addEventListener("click", openSidebar);
+closeSidebarBtn.addEventListener("click", closeSidebar);
+sidebarBackdrop.addEventListener("click", closeSidebar);
+
+/* ============================================================
+   AUTHENTICATION LOGIC
    ============================================================ */
 const authScreen = document.getElementById("auth-screen");
 const appScreen = document.getElementById("app-screen");
@@ -80,7 +98,7 @@ function showApp() {
 }
 
 /* ============================================================
-   NAVIGATION & TABS
+   NAVIGATION
    ============================================================ */
 const navButtons = document.querySelectorAll(".nav-btn");
 const views = document.querySelectorAll(".content-view");
@@ -90,6 +108,7 @@ navButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     const target = btn.getAttribute("data-target");
     switchView(target);
+    closeSidebar();
   });
 });
 
@@ -102,12 +121,11 @@ function switchView(viewName) {
     teachers: "Teacher Management",
     attendance: "Daily Teacher Attendance",
     history: "Attendance Log History",
-    classes: "Classes & Subjects Configuration",
+    classes: "Classes & Subjects",
     timetable: "Class Timetable Manager"
   };
   pageTitle.innerText = titleMap[viewName] || "Dashboard";
 
-  // Trigger UI Rerenders
   if (viewName === "dashboard") renderDashboard();
   if (viewName === "teachers") renderTeachers();
   if (viewName === "attendance") renderAttendance();
@@ -152,7 +170,7 @@ function renderDashboard() {
 
   const dashSummary = document.getElementById("dash-attendance-summary");
   if (!recordToday) {
-    dashSummary.innerHTML = `<p style="color:var(--text-muted);">No attendance marked for today (${today}). Click 'Mark Attendance' to begin.</p>`;
+    dashSummary.innerHTML = `<p style="color:var(--text-muted); padding: 0.5rem 0;">No attendance marked for today (${today}).</p>`;
   } else {
     let rows = store.teachers.map(t => {
       const status = recordToday.records[t.id] || "Unmarked";
@@ -164,7 +182,7 @@ function renderDashboard() {
 }
 
 /* ============================================================
-   TEACHER DIRECTORY
+   TEACHERS & CLEAR ALL TEACHERS
    ============================================================ */
 const teachersTableBody = document.getElementById("teachers-table-body");
 const teacherModal = document.getElementById("teacher-modal");
@@ -172,8 +190,13 @@ const openTeacherModalBtn = document.getElementById("open-teacher-modal");
 const closeTeacherModalBtn = document.getElementById("close-teacher-modal");
 const cancelTeacherModalBtn = document.getElementById("cancel-teacher-modal");
 const teacherForm = document.getElementById("teacher-form");
+const clearAllTeachersBtn = document.getElementById("clear-all-teachers-btn");
 
 function renderTeachers() {
+  if (store.teachers.length === 0) {
+    teachersTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No teachers available. Click "+ Add New Teacher" to add.</td></tr>`;
+    return;
+  }
   teachersTableBody.innerHTML = store.teachers.map(t => `
     <tr>
       <td><code>${t.id}</code></td>
@@ -224,7 +247,7 @@ teacherForm.onsubmit = (e) => {
   saveStore();
   teacherModal.classList.remove("active");
   renderTeachers();
-  populateDropdowns();
+  renderDashboard();
 };
 
 window.editTeacher = (id) => {
@@ -241,16 +264,25 @@ window.editTeacher = (id) => {
 };
 
 window.deleteTeacher = (id) => {
-  if (confirm("Are you sure you want to remove this teacher?")) {
+  if (confirm("Are you sure you want to delete this teacher?")) {
     store.teachers = store.teachers.filter(t => t.id !== id);
     saveStore();
     renderTeachers();
-    populateDropdowns();
+    renderDashboard();
+  }
+};
+
+clearAllTeachersBtn.onclick = () => {
+  if (confirm("⚠️ WARNING: Do you want to clear ALL teachers from the database?")) {
+    store.teachers = [];
+    saveStore();
+    renderTeachers();
+    renderDashboard();
   }
 };
 
 /* ============================================================
-   DAILY ATTENDANCE
+   DAILY ATTENDANCE & HISTORY
    ============================================================ */
 const attendanceDateInput = document.getElementById("attendance-date");
 const attendanceTableBody = document.getElementById("attendance-table-body");
@@ -262,6 +294,11 @@ function renderAttendance() {
   const selectedDate = attendanceDateInput.value;
   const existingLog = store.attendanceHistory.find(h => h.date === selectedDate);
   const records = existingLog ? existingLog.records : {};
+
+  if (store.teachers.length === 0) {
+    attendanceTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No teachers found. Please add teachers first.</td></tr>`;
+    return;
+  }
 
   attendanceTableBody.innerHTML = store.teachers.map(t => {
     const status = records[t.id] || "Present";
@@ -307,13 +344,10 @@ saveAttendanceBtn.onclick = () => {
   }
 
   saveStore();
-  alert(`Attendance for ${date} successfully recorded!`);
+  alert(`Attendance for ${date} successfully saved!`);
   renderDashboard();
 };
 
-/* ============================================================
-   ATTENDANCE HISTORY
-   ============================================================ */
 const historyTableBody = document.getElementById("history-table-body");
 const clearHistoryBtn = document.getElementById("clear-history-btn");
 
@@ -323,13 +357,10 @@ function renderHistory() {
     return;
   }
 
-  // Sort descending by date
   const sorted = [...store.attendanceHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   historyTableBody.innerHTML = sorted.map(row => {
-    let presentCount = 0;
-    let absentCount = 0;
-    let leaveCount = 0;
+    let presentCount = 0, absentCount = 0, leaveCount = 0;
     const values = Object.values(row.records);
 
     values.forEach(v => {
@@ -346,7 +377,7 @@ function renderHistory() {
         <td><strong>${row.date}</strong></td>
         <td><span class="badge badge-present">${presentCount} Present</span></td>
         <td><span class="badge badge-absent">${absentCount} Absent</span></td>
-        <td><span class="badge badge-leave">${leaveCount} On Leave</span></td>
+        <td><span class="badge badge-leave">${leaveCount} Leave</span></td>
         <td><strong>${pct}%</strong></td>
       </tr>
     `;
@@ -389,6 +420,7 @@ addClassForm.onsubmit = (e) => {
     document.getElementById("class-name").value = "";
     renderClassesAndSubjects();
     populateDropdowns();
+    renderDashboard();
   }
 };
 
@@ -409,6 +441,7 @@ window.removeClass = (className) => {
   saveStore();
   renderClassesAndSubjects();
   populateDropdowns();
+  renderDashboard();
 };
 
 window.removeSubject = (subjectName) => {
@@ -419,7 +452,7 @@ window.removeSubject = (subjectName) => {
 };
 
 /* ============================================================
-   TIMETABLE BUILDER & EXPORT
+   TIMETABLE (8 PERIODS) + AUTO GENERATOR
    ============================================================ */
 const timetableClassSelect = document.getElementById("timetable-class-select");
 const timetableBody = document.getElementById("timetable-body");
@@ -427,6 +460,8 @@ const slotModal = document.getElementById("slot-modal");
 const slotForm = document.getElementById("slot-form");
 const closeSlotModalBtn = document.getElementById("close-slot-modal");
 const clearSlotBtn = document.getElementById("clear-slot-btn");
+const autoBuildBtn = document.getElementById("btn-auto-build");
+const clearTimetableBtn = document.getElementById("btn-clear-timetable");
 
 function populateDropdowns() {
   timetableClassSelect.innerHTML = store.classes.map(c => `<option value="${c}">${c}</option>`).join("");
@@ -436,10 +471,10 @@ timetableClassSelect.onchange = () => renderTimetable();
 
 function renderTimetable() {
   const selectedClass = timetableClassSelect.value;
-  document.getElementById("timetable-title-display").innerText = `Weekly Timetable — ${selectedClass || "No Class Selected"}`;
+  document.getElementById("timetable-title-display").innerText = `Weekly Timetable — ${selectedClass || "No Class"}`;
 
   if (!selectedClass) {
-    timetableBody.innerHTML = `<tr><td colspan="7">Please add and select a class.</td></tr>`;
+    timetableBody.innerHTML = `<tr><td colspan="9">Please add and select a class.</td></tr>`;
     return;
   }
 
@@ -464,25 +499,26 @@ function renderTimetable() {
       `;
     }).join("");
 
-    return `<tr><th><strong>${day}</strong></th>${periodCols}</tr>`;
+    return `<tr><th class="day-col"><strong>${day}</strong></th>${periodCols}</tr>`;
   }).join("");
 }
 
 window.openSlotModal = (day, period) => {
   const selectedClass = timetableClassSelect.value;
-  document.getElementById("slot-modal-title").innerText = `Assign Slot (${day} - Period ${period.replace('P','')})`;
+  document.getElementById("slot-modal-title").innerText = `Assign (${day} - ${period})`;
   document.getElementById("slot-day").value = day;
   document.getElementById("slot-period").value = period;
 
-  // Fill subjects
   const subjSelect = document.getElementById("slot-subject");
   subjSelect.innerHTML = store.subjects.map(s => `<option value="${s}">${s}</option>`).join("");
 
-  // Fill teachers
   const teachSelect = document.getElementById("slot-teacher");
-  teachSelect.innerHTML = store.teachers.map(t => `<option value="${t.name}">${t.name} (${t.subject})</option>`).join("");
+  if (store.teachers.length === 0) {
+    teachSelect.innerHTML = `<option value="Staff Member">Staff Member (No teachers added)</option>`;
+  } else {
+    teachSelect.innerHTML = store.teachers.map(t => `<option value="${t.name}">${t.name} (${t.subject})</option>`).join("");
+  }
 
-  // Prepopulate if slot exists
   const existing = store.timetables[selectedClass]?.[`${day}-${period}`];
   if (existing) {
     subjSelect.value = existing.subject;
@@ -523,8 +559,55 @@ clearSlotBtn.onclick = () => {
   renderTimetable();
 };
 
+/* --- AUTO BUILD TIMETABLE GENERATOR --- */
+autoBuildBtn.onclick = () => {
+  const selectedClass = timetableClassSelect.value;
+  if (!selectedClass) return alert("Select a class first!");
+  if (store.subjects.length === 0) return alert("Please add at least 1 subject in Classes & Subjects.");
+
+  if (!confirm(`Generate automatic 8-period timetable for ${selectedClass}? This will replace current assignments.`)) return;
+
+  const newMatrix = {};
+  const subjectsList = store.subjects;
+  const teachersList = store.teachers;
+
+  let subjIndex = 0;
+
+  DAYS.forEach(day => {
+    PERIODS.forEach(period => {
+      const subject = subjectsList[subjIndex % subjectsList.length];
+      
+      // Find teacher who specializes in this subject, or fallback
+      const matchTeacher = teachersList.find(t => t.subject === subject);
+      const teacherName = matchTeacher ? matchTeacher.name : (teachersList.length > 0 ? teachersList[subjIndex % teachersList.length].name : "Assigned Staff");
+
+      newMatrix[`${day}-${period}`] = {
+        subject: subject,
+        teacher: teacherName
+      };
+
+      subjIndex++;
+    });
+  });
+
+  store.timetables[selectedClass] = newMatrix;
+  saveStore();
+  renderTimetable();
+  alert(`Timetable for ${selectedClass} automatically generated successfully!`);
+};
+
+clearTimetableBtn.onclick = () => {
+  const selectedClass = timetableClassSelect.value;
+  if (!selectedClass) return;
+  if (confirm(`Clear all slots for ${selectedClass}?`)) {
+    store.timetables[selectedClass] = {};
+    saveStore();
+    renderTimetable();
+  }
+};
+
 /* ============================================================
-   DOWNLOAD AS IMAGE & PRINT FUNCTIONALITY
+   EXPORT AS IMAGE & PRINT
    ============================================================ */
 document.getElementById("btn-print-timetable").addEventListener("click", () => {
   window.print();
@@ -534,10 +617,11 @@ document.getElementById("btn-download-timetable").addEventListener("click", () =
   const node = document.getElementById("timetable-capture-node");
   const selectedClass = timetableClassSelect.value || "Class";
 
-  // Use html2canvas from CDN
   html2canvas(node, {
-    scale: 2, // High resolution export
-    backgroundColor: "#ffffff"
+    scale: 2,
+    backgroundColor: "#ffffff",
+    scrollX: 0,
+    scrollY: 0
   }).then(canvas => {
     const link = document.createElement("a");
     link.download = `Timetable_${selectedClass.replace(/\s+/g, "_")}.png`;
