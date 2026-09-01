@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduAdmin - School & Timetable Management</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <div id="auth-screen" class="screen active">
+    <div class="login-card">
+      <div class="brand">
+        <span class="icon">🏫</span>
+        <h2>EduAdmin Portal</h2>
+        <p>School & Timetable System</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" value="admin" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" value="admin123" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+        <p class="demo-credentials">Demo credentials: <strong>admin</strong> / <strong>admin123</strong></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-screen" class="screen">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="icon">🏫</span>
+        <h3>EduAdmin</h3>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" data-target="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-target="teachers">👨‍🏫 Teachers</button>
+        <button class="nav-btn" data-target="attendance">📋 Daily Attendance</button>
+        <button class="nav-btn" data-target="history">📜 Attendance History</button>
+        <button class="nav-btn" data-target="classes">🏫 Classes & Subjects</button>
+        <button class="nav-btn" data-target="timetable">🗓️ Timetable Builder</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <span class="avatar">A</span>
+          <div>
+            <strong>Admin User</strong>
+            <small>admin@school.edu</small>
+          </div>
+        </div>
+        <button id="logout-btn" class="btn btn-outline btn-sm">Sign Out</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <h1 id="page-title">Dashboard Overview</h1>
+        <div class="date-badge" id="live-date"></div>
+      </header>
+
+      <section id="view-dashboard" class="content-view active">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-icon bg-blue">👨‍🏫</span>
+            <div>
+              <p>Total Teachers</p>
+              <h3 id="stat-total-teachers">0</h3>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon bg-green">✅</span>
+            <div>
+              <p>Present Today</p>
+              <h3 id="stat-present-today">0</h3>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon bg-red">❌</span>
+            <div>
+              <p>Absent / On Leave</p>
+              <h3 id="stat-absent-today">0</h3>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon bg-purple">🏫</span>
+            <div>
+              <p>Active Classes</p>
+              <h3 id="stat-total-classes">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-grid">
+          <div class="card">
+            <h3>Quick Today's Attendance Overview</h3>
+            <div id="dash-attendance-summary" class="table-container">
+              </div>
+          </div>
+          <div class="card">
+            <h3>Quick Links & Actions</h3>
+            <div class="quick-actions">
+              <button class="btn btn-primary" onclick="switchView('attendance')">Mark Attendance</button>
+              <button class="btn btn-secondary" onclick="switchView('timetable')">View Timetable</button>
+              <button class="btn btn-outline" onclick="switchView('teachers')">Manage Staff</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-teachers" class="content-view">
+        <div class="section-actions">
+          <h2>Teacher Directory</h2>
+          <button class="btn btn-primary" id="open-teacher-modal">+ Add New Teacher</button>
+        </div>
+        <div class="card">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Subject Specialization</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="teachers-table-body">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-attendance" class="content-view">
+        <div class="section-actions">
+          <div>
+            <h2>Daily Teacher Attendance</h2>
+            <p>Select date and mark status (Present / Absent / Leave)</p>
+          </div>
+          <div class="date-selector-wrap">
+            <label for="attendance-date"><strong>Date:</strong></label>
+            <input type="date" id="attendance-date" class="input-control" />
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Teacher Name</th>
+                  <th>Primary Subject</th>
+                  <th>Status</th>
+                  <th>Quick Action</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-table-body">
+                </tbody>
+            </table>
+          </div>
+          <div class="card-footer">
+            <button id="save-attendance-btn" class="btn btn-success">Save Attendance Record</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-history" class="content-view">
+        <div class="section-actions">
+          <h2>Attendance Log History</h2>
+          <button id="clear-history-btn" class="btn btn-danger btn-sm">Clear Old History</button>
+        </div>
+        <div class="card">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Present Teachers</th>
+                  <th>Absent Teachers</th>
+                  <th>On Leave</th>
+                  <th>Total Present %</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-classes" class="content-view">
+        <div class="grid-2col">
+          <div class="card">
+            <h3>Add New Class</h3>
+            <form id="add-class-form">
+              <div class="form-group">
+                <label for="class-name">Class Name / Grade</label>
+                <input type="text" id="class-name" placeholder="e.g., Grade 10-A" required />
+              </div>
+              <button type="submit" class="btn btn-primary">Add Class</button>
+            </form>
+            <div class="mt-4">
+              <h4>Existing Classes</h4>
+              <ul id="class-list" class="tag-list"></ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Add New Subject</h3>
+            <form id="add-subject-form">
+              <div class="form-group">
+                <label for="subject-name">Subject Name</label>
+                <input type="text" id="subject-name" placeholder="e.g., Physics" required />
+              </div>
+              <button type="submit" class="btn btn-primary">Add Subject</button>
+            </form>
+            <div class="mt-4">
+              <h4>Existing Subjects</h4>
+              <ul id="subject-list" class="tag-list"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-timetable" class="content-view">
+        <div class="section-actions no-print">
+          <div class="filter-group">
+            <label for="timetable-class-select"><strong>Select Class:</strong></label>
+            <select id="timetable-class-select" class="input-control"></select>
+          </div>
+          <div class="button-group">
+            <button class="btn btn-secondary" id="btn-print-timetable">🖨️ Print Timetable</button>
+            <button class="btn btn-primary" id="btn-download-timetable">📥 Download as Image</button>
+          </div>
+        </div>
+
+        <div class="card printable-area" id="timetable-capture-node">
+          <div class="timetable-header">
+            <h2 id="timetable-title-display">Weekly Class Timetable</h2>
+            <p id="timetable-meta-display">Academic Year 2026-2027 • EduAdmin Management System</p>
+          </div>
+
+          <div class="table-container">
+            <table class="timetable-table" id="timetable-grid">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Period 1<br><small>08:30 - 09:15</small></th>
+                  <th>Period 2<br><small>09:15 - 10:00</small></th>
+                  <th>Period 3<br><small>10:15 - 11:00</small></th>
+                  <th>Period 4<br><small>11:00 - 11:45</small></th>
+                  <th>Period 5<br><small>12:30 - 01:15</small></th>
+                  <th>Period 6<br><small>01:15 - 02:00</small></th>
+                </tr>
+              </thead>
+              <tbody id="timetable-body">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="teacher-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="teacher-modal-title">Add Teacher</h3>
+        <button class="modal-close" id="close-teacher-modal">&times;</button>
+      </div>
+      <form id="teacher-form">
+        <input type="hidden" id="teacher-id" />
+        <div class="form-group">
+          <label for="teacher-name">Full Name</label>
+          <input type="text" id="teacher-name" required />
+        </div>
+        <div class="form-group">
+          <label for="teacher-subject">Primary Subject</label>
+          <select id="teacher-subject" required></select>
+        </div>
+        <div class="form-group">
+          <label for="teacher-email">Email</label>
+          <input type="email" id="teacher-email" required />
+        </div>
+        <div class="form-group">
+          <label for="teacher-phone">Phone Number</label>
+          <input type="tel" id="teacher-phone" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancel-teacher-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Teacher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="slot-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="slot-modal-title">Assign Period Slot</h3>
+        <button class="modal-close" id="close-slot-modal">&times;</button>
+      </div>
+      <form id="slot-form">
+        <input type="hidden" id="slot-day" />
+        <input type="hidden" id="slot-period" />
+        <div class="form-group">
+          <label for="slot-subject">Subject</label>
+          <select id="slot-subject" required></select>
+        </div>
+        <div class="form-group">
+          <label for="slot-teacher">Assigned Teacher</label>
+          <select id="slot-teacher" required></select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="clear-slot-btn">Clear Slot</button>
+          <button type="submit" class="btn btn-primary">Save Slot</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
