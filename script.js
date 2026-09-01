@@ -19,14 +19,7 @@ const INITIAL_DATA = {
       records: { "T101": "Present", "T102": "Present", "T103": "On Leave", "T104": "Present", "T105": "Absent" }
     }
   ],
-  timetables: {
-    "Grade 11-Science": {
-      "Monday-P1": { subject: "Mathematics", teacher: "Dr. Sarah Jenkins" },
-      "Monday-P2": { subject: "Physics", teacher: "Mrs. Marie Curie" },
-      "Monday-P3": { subject: "Chemistry", teacher: "Mr. Dmitri Mendeleev" },
-      "Monday-P4": { subject: "English", teacher: "Mr. Robert Frost" }
-    }
-  }
+  timetables: {}
 };
 
 let store = JSON.parse(localStorage.getItem("eduAdminDB")) || INITIAL_DATA;
@@ -361,7 +354,7 @@ window.removeSubject = function(subjectName) {
 };
 
 /* ============================================================
-   TIMETABLE & AUTO GENERATION (8 PERIODS)
+   TIMETABLE & CONFLICT-FREE AUTO ENGINE
    ============================================================ */
 function populateDropdowns() {
   const select = document.getElementById("timetable-class-select");
@@ -387,6 +380,7 @@ function renderTimetable() {
     return;
   }
 
+  if (!store.timetables) store.timetables = {};
   const classData = store.timetables[selectedClass] || {};
 
   tbody.innerHTML = DAYS.map(day => {
@@ -394,8 +388,9 @@ function renderTimetable() {
       const slotKey = `${day}-${period}`;
       const assignment = classData[slotKey];
       if (assignment) {
+        const isFree = assignment.subject === "Free Period";
         return `
-          <td class="slot-cell" onclick="openSlotModal('${day}', '${period}')">
+          <td class="slot-cell ${isFree ? 'free-period' : ''}" onclick="openSlotModal('${day}', '${period}')">
             <span class="slot-subject">${assignment.subject}</span>
             <span class="slot-teacher">${assignment.teacher}</span>
           </td>
@@ -419,13 +414,17 @@ window.openSlotModal = function(day, period) {
   document.getElementById("slot-period").value = period;
 
   const subjSelect = document.getElementById("slot-subject");
-  subjSelect.innerHTML = store.subjects.map(s => `<option value="${s}">${s}</option>`).join("");
+  const allSubjects = ["Free Period", ...store.subjects];
+  subjSelect.innerHTML = allSubjects.map(s => `<option value="${s}">${s}</option>`).join("");
 
   const teachSelect = document.getElementById("slot-teacher");
   if (store.teachers.length === 0) {
-    teachSelect.innerHTML = `<option value="Staff Member">Staff Member</option>`;
+    teachSelect.innerHTML = `<option value="Self Study">Self Study (No Teachers)</option>`;
   } else {
-    teachSelect.innerHTML = store.teachers.map(t => `<option value="${t.name}">${t.name} (${t.subject})</option>`).join("");
+    teachSelect.innerHTML = `
+      <option value="Self Study / Library">Self Study / Library</option>
+      ${store.teachers.map(t => `<option value="${t.name}">${t.name} (${t.subject})</option>`).join("")}
+    `;
   }
 
   const existing = store.timetables[selectedClass]?.[`${day}-${period}`];
@@ -454,38 +453,99 @@ window.clearCurrentSlot = function() {
   renderTimetable();
 };
 
-window.autoBuildTimetable = function() {
-  const selectedClass = document.getElementById("timetable-class-select").value;
-  if (!selectedClass) return alert("Please select a class first!");
-  if (store.subjects.length === 0) return alert("Please add subjects in 'Classes & Subjects' first.");
-
-  if (!confirm(`Generate automatic 8-period timetable for ${selectedClass}?`)) return;
-
-  const newMatrix = {};
-  const subjectsList = store.subjects;
+/* 1. MASTER TIMETABLE GENERATOR (Conflict-Free Across All Classes + Auto Free Periods) */
+window.autoBuildAllClassesTimetable = function() {
+  const classesList = store.classes;
   const teachersList = store.teachers;
 
-  let subjIndex = 0;
+  if (!classesList || classesList.length === 0) return alert("Please add classes first in 'Classes & Subjects'!");
+  if (!teachersList || teachersList.length === 0) return alert("Please add teachers first in 'Teachers' tab!");
 
-  DAYS.forEach(day => {
-    PERIODS.forEach(period => {
-      const subject = subjectsList[subjIndex % subjectsList.length];
-      const matchTeacher = teachersList.find(t => t.subject === subject);
-      const teacherName = matchTeacher ? matchTeacher.name : (teachersList.length > 0 ? teachersList[subjIndex % teachersList.length].name : "Assigned Staff");
+  if (!confirm("Generate conflict-free master timetable for ALL classes? (Teachers will never clash in the same period and free periods will be auto-assigned)")) return;
 
-      newMatrix[`${day}-${period}`] = {
-        subject: subject,
-        teacher: teacherName
-      };
+  const newTimetables = {};
+  classesList.forEach(cls => newTimetables[cls] = {});
 
-      subjIndex++;
+  const totalTeachers = teachersList.length;
+
+  DAYS.forEach((day, dayIdx) => {
+    PERIODS.forEach((period, periodIdx) => {
+      const busyTeachersThisSlot = new Set();
+
+      classesList.forEach((cls, clsIdx) => {
+        const slotKey = `${day}-${period}`;
+        let teacherAssigned = false;
+
+        for (let attempt = 0; attempt < totalTeachers; attempt++) {
+          const candidateIdx = (dayIdx * 3 + periodIdx * 2 + clsIdx + attempt) % totalTeachers;
+          const candidateTeacher = teachersList[candidateIdx];
+
+          if (!busyTeachersThisSlot.has(candidateTeacher.name)) {
+            busyTeachersThisSlot.add(candidateTeacher.name);
+            newTimetables[cls][slotKey] = {
+              subject: candidateTeacher.subject || "General",
+              teacher: candidateTeacher.name
+            };
+            teacherAssigned = true;
+            break;
+          }
+        }
+
+        // Agar koi teacher free nahi hai iss period me, toh Free Period
+        if (!teacherAssigned) {
+          newTimetables[cls][slotKey] = {
+            subject: "Free Period",
+            teacher: "Self Study / Library"
+          };
+        }
+      });
     });
   });
 
+  store.timetables = newTimetables;
+  saveStore();
+  renderTimetable();
+  alert("✅ Conflict-free master timetable generated for all classes!");
+};
+
+/* 2. SINGLE CLASS GENERATOR */
+window.autoBuildSingleClassTimetable = function() {
+  const selectedClass = document.getElementById("timetable-class-select").value;
+  if (!selectedClass) return alert("Please select a class first!");
+
+  const teachersList = store.teachers;
+  if (!teachersList || teachersList.length === 0) {
+    return alert("Please add teachers in 'Teachers' tab first!");
+  }
+
+  const newMatrix = {};
+  const totalTeachers = teachersList.length;
+  let pointer = 0;
+
+  DAYS.forEach((day, dayIdx) => {
+    PERIODS.forEach((period, pIdx) => {
+      // Periodic free period rotation
+      if ((dayIdx + pIdx) % 7 === 0 && totalTeachers > 2) {
+        newMatrix[`${day}-${period}`] = {
+          subject: "Free Period",
+          teacher: "Self Study"
+        };
+      } else {
+        const t = teachersList[pointer % totalTeachers];
+        newMatrix[`${day}-${period}`] = {
+          subject: t.subject || "General",
+          teacher: t.name
+        };
+        pointer++;
+      }
+    });
+  });
+
+  if (!store.timetables) store.timetables = {};
   store.timetables[selectedClass] = newMatrix;
   saveStore();
   renderTimetable();
-  alert(`Timetable for ${selectedClass} generated!`);
+  alert(`✅ Timetable generated for ${selectedClass}!`);
 };
 
 window.clearCurrentTimetable = function() {
@@ -519,7 +579,6 @@ window.downloadTimetableImage = function() {
    APP INITIALIZATION ON PAGE LOAD
    ============================================================ */
 function initAll() {
-  // Date setup
   const liveDate = document.getElementById("live-date");
   if (liveDate) liveDate.innerText = new Date().toDateString();
 
@@ -528,7 +587,6 @@ function initAll() {
     dateInput.value = new Date().toISOString().split("T")[0];
   }
 
-  // Populate data
   populateDropdowns();
   renderDashboard();
   renderTeachers();
@@ -537,7 +595,6 @@ function initAll() {
   renderClassesAndSubjects();
   renderTimetable();
 
-  // Bind Form Submissions
   const loginForm = document.getElementById("login-form");
   if (loginForm) {
     loginForm.onsubmit = function(e) {
@@ -620,6 +677,7 @@ function initAll() {
       const subject = document.getElementById("slot-subject").value;
       const teacher = document.getElementById("slot-teacher").value;
 
+      if (!store.timetables) store.timetables = {};
       if (!store.timetables[selectedClass]) store.timetables[selectedClass] = {};
       store.timetables[selectedClass][`${day}-${period}`] = { subject, teacher };
 
@@ -630,7 +688,6 @@ function initAll() {
   }
 }
 
-// Auto Session Check
 window.addEventListener("DOMContentLoaded", () => {
   if (sessionStorage.getItem("eduAdminAuth") === "true") {
     document.getElementById("auth-screen").classList.remove("active");
