@@ -38,7 +38,7 @@ body {
   display: flex;
 }
 
-/* LOGIN */
+/* LOGIN SCREEN */
 #auth-screen {
   align-items: center;
   justify-content: center;
@@ -67,7 +67,7 @@ body {
   text-align: center;
 }
 
-/* APP SHELL */
+/* APP WRAPPER */
 #app-screen {
   display: flex;
   width: 100vw;
@@ -76,7 +76,7 @@ body {
   overflow: hidden;
 }
 
-/* SIDEBAR DRAWER OVERLAY */
+/* SIDEBAR DRAWER */
 .sidebar-backdrop {
   display: none;
   position: fixed;
@@ -450,6 +450,14 @@ input:focus, select:focus {
   display: block;
   margin-top: 0.25rem;
   line-height: 1.1;
+}
+.slot-cell.free-period {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}
+.slot-cell.free-period .slot-subject {
+  color: #64748b;
+  font-style: italic;
 }
 .slot-cell.empty {
   color: #94a3b8;
